@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+import { CameraControl } from './cameraControl';
+
+window.addEventListener('contextmenu', (e) => e.preventDefault());
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
   75, // FOV
@@ -43,12 +47,17 @@ loader.load(
   }
 );
 
+const cameraControl = new CameraControl(renderer, camera, () => {
+  // you might want to rerender on camera update if you are not rerendering all the time
+  window.requestAnimationFrame(() => renderer.render(scene, camera));
+});
+
 function animate() {
   requestAnimationFrame(animate);
-  if (duck) {
-    duck.rotation.x += 0.01;
-    duck.rotation.y += 0.01;
-  }
+  // if (duck) {
+  //   duck.rotation.x += 0.01;
+  //   duck.rotation.y += 0.01;
+  // }
   renderer.render(scene, camera);
 }
 animate();
