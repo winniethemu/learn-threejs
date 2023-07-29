@@ -77,8 +77,8 @@ const waterMaterial = new THREE.MeshBasicMaterial({
 });
 
 const geometry = new THREE.PlaneGeometry(3, 3);
-for (let i = -50; i < 50; i++) {
-  for (let j = -50; j < 200; j++) {
+for (let i = -20; i < 20; i++) {
+  for (let j = -20; j < 20; j++) {
     const plane = new THREE.Mesh(geometry, waterMaterial);
     plane.rotation.x = -Math.PI / 2;
     plane.position.x = i * 3;
@@ -86,6 +86,23 @@ for (let i = -50; i < 50; i++) {
     scene.add(plane);
   }
 }
+
+const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256);
+cubeRenderTarget.texture.type = THREE.HalfFloatType;
+const cubeCamera = new THREE.CubeCamera(1, 1000, cubeRenderTarget);
+const sphereMaterial = new THREE.MeshStandardMaterial({
+  envMap: cubeRenderTarget.texture,
+  roughness: 0.05,
+  metalness: 1,
+});
+
+const sphere = new THREE.Mesh(
+  new THREE.IcosahedronGeometry(1, 8),
+  sphereMaterial
+);
+cubeCamera.position.y = 3;
+sphere.position.y = 3;
+scene.add(sphere);
 
 //camera controls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -137,6 +154,7 @@ function animate() {
     controls.target.set(duck.position.x, duck.position.y, duck.position.z);
 
   controls.update();
+  cubeCamera.update(renderer, scene);
   renderer.render(scene, camera);
 
   var azimu = controls.getAzimuthalAngle(); // camera angle around y axis, in radians
