@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import GifLoader from 'three-gif-loader';
 
 //disable right click menu
 window.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -30,12 +31,11 @@ const ambientLight = new THREE.AmbientLight(color, 0.3);
 pointLight.position.set(5, 20, 20);
 scene.add(pointLight, ambientLight);
 
-
-const loader = new GLTFLoader();
+const gltfLoader = new GLTFLoader();
 
 //duck
 let duck;
-loader.load(
+gltfLoader.load(
   '/Duck.glb',
   function (gltf) {
     duck = gltf.scene;
@@ -48,41 +48,56 @@ loader.load(
   }
 );
 
-const loader2 = new OBJLoader();
-loader2.load(
-	'/camel.obj',
-	function (gltf) {
-		scene.add( gltf );
-	},
-	function (error) {
-		console.error(error);
-	}
-);
-/*let car;
-loader.load(
-  'AM_DB2.glb',
-  function (gltf) {
-    car = gltf.scene;
-    scene.add(car);
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load('/red.png');
+const material = new THREE.MeshPhongMaterial({ map: texture });
+
+const objLoader = new OBJLoader();
+objLoader.load(
+  '/camel.obj',
+  function (obj) {
+    obj.scale.x = obj.scale.y = obj.scale.z = 0.01;
+    obj.traverse(function (child) {
+      if (child instanceof THREE.Mesh) {
+        child.material = material;
+      }
+    });
+    scene.add(obj);
   },
-  undefined,
   function (error) {
     console.error(error);
   }
-);*/
+);
+
+const gifLoader = new GifLoader();
+const waterTexture = gifLoader.load('water.gif');
+const waterMaterial = new THREE.MeshBasicMaterial({
+  map: waterTexture,
+  transparent: true,
+});
+
+const geometry = new THREE.PlaneGeometry(3, 3);
+for (let i = -50; i < 50; i++) {
+  for (let j = -50; j < 200; j++) {
+    const plane = new THREE.Mesh(geometry, waterMaterial);
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.x = i * 3;
+    plane.position.z = j * 3;
+    scene.add(plane);
+  }
+}
 
 //camera controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.mouseButtons = {
   MIDDLE: THREE.MOUSE.ZOOM,
-  RIGHT: THREE.MOUSE.ROTATE
-}
+  RIGHT: THREE.MOUSE.ROTATE,
+};
 controls.update();
-
 
 //get key input
 var leftPressed, rightPressed, downPressed, upPressed;
-document.addEventListener("keydown", onDocumentKeyDown, false);
+document.addEventListener('keydown', onDocumentKeyDown, false);
 function onDocumentKeyDown(event) {
   var keyCode = event.which;
   if (keyCode == 87) {
@@ -97,8 +112,8 @@ function onDocumentKeyDown(event) {
   if (keyCode == 68) {
     rightPressed = true;
   }
-};
-document.addEventListener("keyup", onDocumentKeyUp, false);
+}
+document.addEventListener('keyup', onDocumentKeyUp, false);
 function onDocumentKeyUp(event) {
   var keyCode = event.which;
   if (keyCode == 87) {
@@ -113,19 +128,20 @@ function onDocumentKeyUp(event) {
   if (keyCode == 68) {
     rightPressed = false;
   }
-};
-
+}
 
 function animate() {
   requestAnimationFrame(animate);
   //point camera towards the duck
-  if(duck) controls.target.set(duck.position.x, duck.position.y, duck.position.z);
+  if (duck)
+    controls.target.set(duck.position.x, duck.position.y, duck.position.z);
 
   controls.update();
   renderer.render(scene, camera);
 
   var azimu = controls.getAzimuthalAngle(); // camera angle around y axis, in radians
-  var deltax = 0, deltaz = 0;
+  var deltax = 0,
+    deltaz = 0;
   var speed = 0.1;
 
   //set duck rotation and position based on camera angle and keys pressed
@@ -135,12 +151,12 @@ function animate() {
     deltaz += -Math.cos(azimu) * speed;
   }
   if (downPressed) {
-    duck.rotation.y = azimu + 3 * Math.PI / 2;
+    duck.rotation.y = azimu + (3 * Math.PI) / 2;
     deltax += Math.sin(azimu) * speed;
     deltaz += Math.cos(azimu) * speed;
   }
   if (leftPressed) {
-    duck.rotation.y = azimu +  Math.PI ;
+    duck.rotation.y = azimu + Math.PI;
     deltax += -Math.cos(azimu) * speed;
     deltaz += Math.sin(azimu) * speed;
   }
