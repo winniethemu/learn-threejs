@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 //disable right click menu
 window.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -47,7 +48,17 @@ loader.load(
   }
 );
 
-let car;
+const loader2 = new OBJLoader();
+loader2.load(
+	'/camel.obj',
+	function (gltf) {
+		scene.add( gltf );
+	},
+	function (error) {
+		console.error(error);
+	}
+);
+/*let car;
 loader.load(
   'AM_DB2.glb',
   function (gltf) {
@@ -58,7 +69,7 @@ loader.load(
   function (error) {
     console.error(error);
   }
-);
+);*/
 
 //camera controls
 const controls = new OrbitControls(camera, renderer.domElement);
