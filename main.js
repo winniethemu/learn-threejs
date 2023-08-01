@@ -71,21 +71,20 @@ objLoader.load(
 
 const gifLoader = new GifLoader();
 const waterTexture = gifLoader.load('water.gif');
+waterTexture.wrapS = THREE.RepeatWrapping;
+waterTexture.wrapT = THREE.RepeatWrapping;
+waterTexture.repeat.set(50, 50);
 const waterMaterial = new THREE.MeshBasicMaterial({
   map: waterTexture,
   transparent: true,
 });
 
-const geometry = new THREE.PlaneGeometry(3, 3);
-for (let i = -20; i < 20; i++) {
-  for (let j = -20; j < 20; j++) {
-    const plane = new THREE.Mesh(geometry, waterMaterial);
-    plane.rotation.x = -Math.PI / 2;
-    plane.position.x = i * 3;
-    plane.position.z = j * 3;
-    scene.add(plane);
-  }
-}
+const geometry = new THREE.PlaneGeometry(150, 150);
+const plane = new THREE.Mesh(geometry, waterMaterial);
+plane.rotation.x = -Math.PI / 2;
+plane.position.x = 0;
+plane.position.z = 0;
+scene.add(plane);
 
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256);
 cubeRenderTarget.texture.type = THREE.HalfFloatType;
@@ -103,6 +102,21 @@ const sphere = new THREE.Mesh(
 cubeCamera.position.y = 3;
 sphere.position.y = 3;
 scene.add(sphere);
+
+// Skybox
+const cubeTextureLoader = new THREE.CubeTextureLoader();
+const cubeTexture = cubeTextureLoader
+  .setPath('skybox/')
+  .load([
+    'pos-x.png',
+    'neg-x.png',
+    'pos-y.png',
+    'neg-y.png',
+    'pos-z.png',
+    'neg-z.png',
+  ]);
+scene.background = cubeTexture;
+
 
 //camera controls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -186,7 +200,10 @@ function animate() {
   if (duck) {
     duck.position.x += deltax;
     duck.position.z += deltaz;
+    plane.position.x = Math.round(duck.position.x / 3) * 3;
+    plane.position.z = Math.round(duck.position.z / 3) * 3;
   }
+
   //move camera with duck
   camera.position.x += deltax;
   camera.position.z += deltaz;
