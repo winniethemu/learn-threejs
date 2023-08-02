@@ -23,7 +23,7 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-//Sun
+// Sun
 const color = 0xffffff;
 const intensity = 1;
 const pointLight = new THREE.PointLight(color, intensity);
@@ -33,7 +33,7 @@ scene.add(pointLight, ambientLight);
 
 const gltfLoader = new GLTFLoader();
 
-//duck
+// Duck
 let duck;
 gltfLoader.load(
   '/Duck.glb',
@@ -48,9 +48,10 @@ gltfLoader.load(
   }
 );
 
+// Camel
 const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load('/red.png');
-const material = new THREE.MeshPhongMaterial({ map: texture });
+const redTexture = textureLoader.load('/red.png');
+const redMaterial = new THREE.MeshPhongMaterial({ map: redTexture });
 
 const objLoader = new OBJLoader();
 objLoader.load(
@@ -59,7 +60,7 @@ objLoader.load(
     obj.scale.x = obj.scale.y = obj.scale.z = 0.01;
     obj.traverse(function (child) {
       if (child instanceof THREE.Mesh) {
-        child.material = material;
+        child.material = redMaterial;
       }
     });
     scene.add(obj);
@@ -69,23 +70,27 @@ objLoader.load(
   }
 );
 
+// Water
+const textureSize = 3;
+const planeSize = 3000;
 const gifLoader = new GifLoader();
 const waterTexture = gifLoader.load('water.gif');
 waterTexture.wrapS = THREE.RepeatWrapping;
 waterTexture.wrapT = THREE.RepeatWrapping;
-waterTexture.repeat.set(50, 50);
+waterTexture.repeat.set(planeSize / textureSize, planeSize / textureSize);
 const waterMaterial = new THREE.MeshBasicMaterial({
   map: waterTexture,
   transparent: true,
 });
 
-const geometry = new THREE.PlaneGeometry(150, 150);
+const geometry = new THREE.PlaneGeometry(planeSize, planeSize);
 const plane = new THREE.Mesh(geometry, waterMaterial);
 plane.rotation.x = -Math.PI / 2;
 plane.position.x = 0;
 plane.position.z = 0;
 scene.add(plane);
 
+// Sphere
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256);
 cubeRenderTarget.texture.type = THREE.HalfFloatType;
 const cubeCamera = new THREE.CubeCamera(1, 1000, cubeRenderTarget);
@@ -118,16 +123,17 @@ const cubeTexture = cubeTextureLoader
 scene.background = cubeTexture;
 
 
-//camera controls
+// Camera
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.mouseButtons = {
-  MIDDLE: THREE.MOUSE.ZOOM,
+  LEFT: THREE.MOUSE.ROTATE,
+  MIDDLE: THREE.MOUSE.ZOOM, //TODO have a max and min zoom
   RIGHT: THREE.MOUSE.ROTATE,
 };
 controls.update();
 
-//get key input
-var leftPressed, rightPressed, downPressed, upPressed;
+// Key inputs
+var leftPressed, rightPressed, downPressed, upPressed, spacePressed;
 document.addEventListener('keydown', onDocumentKeyDown, false);
 function onDocumentKeyDown(event) {
   var keyCode = event.which;
@@ -142,6 +148,9 @@ function onDocumentKeyDown(event) {
   }
   if (keyCode == 68) {
     rightPressed = true;
+  }
+  if (keyCode == 32) {
+    spacePressed = true;
   }
 }
 document.addEventListener('keyup', onDocumentKeyUp, false);
@@ -159,10 +168,29 @@ function onDocumentKeyUp(event) {
   if (keyCode == 68) {
     rightPressed = false;
   }
+  if (keyCode == 32) {
+    spacePressed = false;
+  }
 }
+
+Array.prototype.remove = function () {
+  var what, a = arguments, L = a.length, ax;
+  while (L && this.length) {
+    what = a[--L];
+    while ((ax = this.indexOf(what)) !== -1) {
+      this.splice(ax, 1);
+    }
+  }
+  return this;
+};
+
+var fireballs = [];
+var fireballTimer = 0;
 
 function animate() {
   requestAnimationFrame(animate);
+   //TODO Leftclick should not rotate the duck
+
   //point camera towards the duck
   if (duck)
     controls.target.set(duck.position.x, duck.position.y, duck.position.z);
@@ -202,6 +230,37 @@ function animate() {
     duck.position.z += deltaz;
     plane.position.x = Math.round(duck.position.x / 3) * 3;
     plane.position.z = Math.round(duck.position.z / 3) * 3;
+  }
+
+  var fireballSpeed = 0.5;
+  fireballTimer--;
+  if (spacePressed && fireballTimer <= 0) {
+    fireballTimer = 15;
+    // Fireball
+    let fireball = {
+      mesh: new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.2, 8),
+        redMaterial //TODO https://threejs.org/examples/?q=glo#webgl_postprocessing_unreal_bloom_selective
+      ),
+      speedx: -Math.sin(azimu) * fireballSpeed,
+      speedz: -Math.cos(azimu) * fireballSpeed,
+      time: 40
+    };
+    fireballs.push(fireball); 
+    scene.add(fireball.mesh);
+    fireball.mesh.position.x = duck.position.x;
+    fireball.mesh.position.y = 0.5;
+    fireball.mesh.position.z = duck.position.z;
+  }
+
+  for (let i = 0; i < fireballs.length; i++) {
+    fireballs[i].mesh.position.x += fireballs[i].speedx;
+    fireballs[i].mesh.position.z += fireballs[i].speedz;
+    fireballs[i].time--;
+    if (fireballs[i].time <= 0) {
+      scene.remove(fireballs[i].mesh);
+      fireballs.remove(fireballs[i]);
+    }
   }
 
   //move camera with duck
