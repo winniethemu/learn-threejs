@@ -63,7 +63,12 @@ objLoader.load(
         child.material = redMaterial;
       }
     });
-    scene.add(obj);
+    for (var i = 0; i < 10; i++) {
+      var obj2 = obj.clone();
+      scene.add(obj2);
+      obj2.position.set(Math.random() * 40 - 20, 0, Math.random() * 40 - 20);
+      obj2.rotation.set(0, Math.random() * Math.PI, 0);
+    }
   },
   function (error) {
     console.error(error);
