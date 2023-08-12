@@ -72,7 +72,7 @@ objLoader.load(
 
 // Water
 const textureSize = 3;
-const planeSize = 3000;
+const planeSize = 5000;
 const gifLoader = new GifLoader();
 const waterTexture = gifLoader.load('water.gif');
 waterTexture.wrapS = THREE.RepeatWrapping;
@@ -186,6 +186,7 @@ Array.prototype.remove = function () {
 
 var fireballs = [];
 var fireballTimer = 0;
+var duckPlannedAngle = 0;
 
 function animate() {
   requestAnimationFrame(animate);
@@ -200,31 +201,51 @@ function animate() {
   renderer.render(scene, camera);
 
   var azimu = controls.getAzimuthalAngle(); // camera angle around y axis, in radians
-  var deltax = 0,
-    deltaz = 0;
+  var deltax = 0, deltaz = 0;
   var speed = 0.1;
 
   //set duck rotation and position based on camera angle and keys pressed
   if (upPressed) {
-    duck.rotation.y = azimu + Math.PI / 2;
+    duckPlannedAngle = azimu + Math.PI / 2;
     deltax += -Math.sin(azimu) * speed;
     deltaz += -Math.cos(azimu) * speed;
   }
   if (downPressed) {
-    duck.rotation.y = azimu + (3 * Math.PI) / 2;
+    duckPlannedAngle = azimu + (3 * Math.PI) / 2;
     deltax += Math.sin(azimu) * speed;
     deltaz += Math.cos(azimu) * speed;
   }
   if (leftPressed) {
-    duck.rotation.y = azimu + Math.PI;
+    duckPlannedAngle = azimu + Math.PI;
     deltax += -Math.cos(azimu) * speed;
     deltaz += Math.sin(azimu) * speed;
   }
   if (rightPressed) {
-    duck.rotation.y = azimu;
+    duckPlannedAngle = azimu;
     deltax += Math.cos(azimu) * speed;
     deltaz += -Math.sin(azimu) * speed;
   }
+  var amount = Math.PI / 20;
+  var ducky = (duck.rotation.y + 2 * Math.PI) % (2 *Math.PI);
+  duckPlannedAngle = (duckPlannedAngle + 2 * Math.PI) % (2 * Math.PI);
+
+  if (duck.rotation.y != duckPlannedAngle) {
+    if (leftOrRight(duckPlannedAngle, ducky)) {
+      duck.rotation.y = (duck.rotation.y + amount) % (2 * Math.PI);
+      ducky = (duck.rotation.y + 2 * Math.PI) % (2 * Math.PI);
+      if (!leftOrRight(duckPlannedAngle, ducky)) {
+        duck.rotation.y = duckPlannedAngle;
+      }
+    }
+    else {
+      duck.rotation.y = (duck.rotation.y - amount + 2 * Math.PI) % (2 * Math.PI);
+      ducky = (duck.rotation.y + 2 * Math.PI) % (2 * Math.PI);
+      if (leftOrRight(duckPlannedAngle, ducky)) {
+        duck.rotation.y = duckPlannedAngle;
+      }
+    }
+  }
+
   if (duck) {
     duck.position.x += deltax;
     duck.position.z += deltaz;
@@ -268,3 +289,8 @@ function animate() {
   camera.position.z += deltaz;
 }
 animate();
+
+
+function leftOrRight(angle1, angle2) {
+  return (angle1 > angle2 && Math.abs(angle1 - angle2) < Math.PI) || (angle1 < angle2 && Math.abs(angle1 - angle2) > Math.PI)
+}
