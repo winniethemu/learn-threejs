@@ -188,6 +188,9 @@ var fireballs = [];
 var fireballTimer = 0;
 var duckPlannedAngle = 0;
 
+const fireTexture = textureLoader.load('/firetexture.jpg');
+const fireMaterial = new THREE.MeshBasicMaterial({ map: fireTexture });
+
 function animate() {
   requestAnimationFrame(animate);
    //TODO Leftclick should not rotate the duck
@@ -257,14 +260,15 @@ function animate() {
   fireballTimer--;
   if (spacePressed && fireballTimer <= 0) {
     fireballTimer = 15;
+
     // Fireball
     let fireball = {
       mesh: new THREE.Mesh(
         new THREE.IcosahedronGeometry(0.2, 8),
-        redMaterial //TODO https://threejs.org/examples/?q=glo#webgl_postprocessing_unreal_bloom_selective
+        fireMaterial //TODO https://threejs.org/examples/?q=glo#webgl_postprocessing_unreal_bloom_selective
       ),
-      speedx: -Math.sin(azimu) * fireballSpeed,
-      speedz: -Math.cos(azimu) * fireballSpeed,
+      speedx: -Math.sin(duck.rotation.y - Math.PI / 2) * fireballSpeed,
+      speedz: -Math.cos(duck.rotation.y - Math.PI / 2) * fireballSpeed,
       time: 40
     };
     fireballs.push(fireball); 
