@@ -53,6 +53,8 @@ const textureLoader = new THREE.TextureLoader();
 const redTexture = textureLoader.load('/red.png');
 const redMaterial = new THREE.MeshPhongMaterial({ map: redTexture });
 
+var camels = [];
+var camel;
 const objLoader = new OBJLoader();
 objLoader.load(
   '/camel.obj',
@@ -63,11 +65,11 @@ objLoader.load(
         child.material = redMaterial;
       }
     });
+    console.log(obj);
+    camel = obj;
+    console.log(camel);
     for (var i = 0; i < 10; i++) {
-      var obj2 = obj.clone();
-      scene.add(obj2);
-      obj2.position.set(Math.random() * 40 - 20, 0, Math.random() * 40 - 20);
-      obj2.rotation.set(0, Math.random() * Math.PI, 0);
+      letThereBeCamel(camel);
     }
   },
   function (error) {
@@ -127,7 +129,6 @@ const cubeTexture = cubeTextureLoader
   ]);
 scene.background = cubeTexture;
 
-
 // Camera
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.mouseButtons = {
@@ -148,10 +149,10 @@ function onDocumentKeyDown(event) {
   if (keyCode == 83) {
     downPressed = true;
   }
-  if (keyCode == 65) {
+  if (keyCode == 65 || keyCode == 81) {
     leftPressed = true;
   }
-  if (keyCode == 68) {
+  if (keyCode == 68 || keyCode == 69) {
     rightPressed = true;
   }
   if (keyCode == 32) {
@@ -167,10 +168,10 @@ function onDocumentKeyUp(event) {
   if (keyCode == 83) {
     downPressed = false;
   }
-  if (keyCode == 65) {
+  if (keyCode == 65 || keyCode == 81) {
     leftPressed = false;
   }
-  if (keyCode == 68) {
+  if (keyCode == 68 || keyCode == 69) {
     rightPressed = false;
   }
   if (keyCode == 32) {
@@ -213,48 +214,58 @@ function animate() {
   var speed = 0.1;
 
   //set duck rotation and position based on camera angle and keys pressed
+
   if (upPressed) {
     duckPlannedAngle = azimu + Math.PI / 2;
-    deltax += -Math.sin(azimu) * speed;
-    deltaz += -Math.cos(azimu) * speed;
-  }
-  if (downPressed) {
-    duckPlannedAngle = azimu + (3 * Math.PI) / 2;
-    deltax += Math.sin(azimu) * speed;
-    deltaz += Math.cos(azimu) * speed;
   }
   if (leftPressed) {
     duckPlannedAngle = azimu + Math.PI;
-    deltax += -Math.cos(azimu) * speed;
-    deltaz += Math.sin(azimu) * speed;
+  }
+  if (downPressed) {
+    duckPlannedAngle = azimu + (3 * Math.PI) / 2;
   }
   if (rightPressed) {
     duckPlannedAngle = azimu;
-    deltax += Math.cos(azimu) * speed;
-    deltaz += -Math.sin(azimu) * speed;
   }
-  var amount = Math.PI / 20;
-  var ducky = (duck.rotation.y + 2 * Math.PI) % (2 *Math.PI);
-  duckPlannedAngle = (duckPlannedAngle + 2 * Math.PI) % (2 * Math.PI);
-
-  if (duck.rotation.y != duckPlannedAngle) {
-    if (leftOrRight(duckPlannedAngle, ducky)) {
-      duck.rotation.y = (duck.rotation.y + amount) % (2 * Math.PI);
-      ducky = (duck.rotation.y + 2 * Math.PI) % (2 * Math.PI);
-      if (!leftOrRight(duckPlannedAngle, ducky)) {
-        duck.rotation.y = duckPlannedAngle;
-      }
-    }
-    else {
-      duck.rotation.y = (duck.rotation.y - amount + 2 * Math.PI) % (2 * Math.PI);
-      ducky = (duck.rotation.y + 2 * Math.PI) % (2 * Math.PI);
-      if (leftOrRight(duckPlannedAngle, ducky)) {
-        duck.rotation.y = duckPlannedAngle;
-      }
-    }
+  if (upPressed && leftPressed) {
+    duckPlannedAngle = azimu + Math.PI * 3 / 4;
+  }
+  if (downPressed && leftPressed) {
+    duckPlannedAngle = azimu + Math.PI * 5 / 4;
+  }
+  if (downPressed && rightPressed) {
+    duckPlannedAngle = azimu + Math.PI * 7 / 4;
+  }
+  if (upPressed && rightPressed) {
+    duckPlannedAngle = azimu + Math.PI * 1 / 4;
+  }
+  if (leftPressed || upPressed || rightPressed || downPressed) {
+    deltax += Math.cos(duckPlannedAngle) * speed;
+    deltaz += -Math.sin(duckPlannedAngle) * speed;
   }
 
   if (duck) {
+    var amount = Math.PI / 20;
+    var ducky = (duck.rotation.y + 2 * Math.PI) % (2 *Math.PI);
+    duckPlannedAngle = (duckPlannedAngle + 2 * Math.PI) % (2 * Math.PI);
+
+    if (duck.rotation.y != duckPlannedAngle) {
+      if (leftOrRight(duckPlannedAngle, ducky)) {
+        duck.rotation.y = (duck.rotation.y + amount) % (2 * Math.PI);
+        ducky = (duck.rotation.y + 2 * Math.PI) % (2 * Math.PI);
+        if (!leftOrRight(duckPlannedAngle, ducky)) {
+          duck.rotation.y = duckPlannedAngle;
+        }
+      }
+      else {
+        duck.rotation.y = (duck.rotation.y - amount + 2 * Math.PI) % (2 * Math.PI);
+        ducky = (duck.rotation.y + 2 * Math.PI) % (2 * Math.PI);
+        if (leftOrRight(duckPlannedAngle, ducky)) {
+          duck.rotation.y = duckPlannedAngle;
+        }
+      }
+    }
+  
     duck.position.x += deltax;
     duck.position.z += deltaz;
     plane.position.x = Math.round(duck.position.x / 3) * 3;
@@ -281,15 +292,34 @@ function animate() {
     fireball.mesh.position.x = duck.position.x;
     fireball.mesh.position.y = 0.5;
     fireball.mesh.position.z = duck.position.z;
+
+    fireball.BB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+    fireball.BB.setFromObject(fireball.mesh);
   }
 
   for (let i = 0; i < fireballs.length; i++) {
     fireballs[i].mesh.position.x += fireballs[i].speedx;
     fireballs[i].mesh.position.z += fireballs[i].speedz;
+    fireballs[i].BB.setFromObject(fireballs[i].mesh);
     fireballs[i].time--;
     if (fireballs[i].time <= 0) {
       scene.remove(fireballs[i].mesh);
       fireballs.remove(fireballs[i]);
+    }
+  }
+
+  for (let i = 0; i < fireballs.length; i++) {
+    for (let j = 0; j < camels.length; j++) {
+      //console.log(camels[j]);
+      //console.log(fireballs[i]);
+      if (camels[j].BB.intersectsBox(fireballs[i].BB)) {
+        //console.log("COLLISION");
+        scene.remove(fireballs[i].mesh);
+        fireballs.remove(fireballs[i]);
+        scene.remove(camels[j].mesh)
+        camels.remove(camels[j]);
+        letThereBeCamel(camel);
+      }
     }
   }
 
@@ -302,4 +332,21 @@ animate();
 
 function leftOrRight(angle1, angle2) {
   return (angle1 > angle2 && Math.abs(angle1 - angle2) < Math.PI) || (angle1 < angle2 && Math.abs(angle1 - angle2) > Math.PI)
+}
+
+function letThereBeCamel() { //.. and there was camel
+  //console.log(camel);
+  var obj2 = camel.clone();
+  scene.add(obj2);
+  obj2.position.set(Math.random() * 40 - 20, 0, Math.random() * 40 - 20);
+  obj2.rotation.set(0, Math.random() * Math.PI, 0);
+
+  let camelBB = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+  camelBB.setFromObject(obj2);
+
+  let camel2 = {
+    mesh: obj2,
+    BB: camelBB
+  };
+  camels.push(camel2);
 }
